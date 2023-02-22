@@ -41,7 +41,7 @@ for subdir in [f.path for f in os.scandir(INPUT_DIRECTORY) if f.is_dir()]:
     n += 1
     if n % 100 == 0: print(n)
 
-    if (n >= 1000):
+    if (n >= 2000):
         break
 
 print(1)
@@ -60,14 +60,9 @@ inputs_b = inputs_b[randomize]
 labels = labels[randomize]
 
 print(3)
-print(inputs_a.shape)
-print(inputs_b.shape)
-print(labels.shape)
-
-print(4)
 # Split train/test
 train_test_frac = 0.8
-split_index = int(len(inputs_a * train_test_frac))
+split_index = int(len(inputs_a) * train_test_frac)
 train_a = inputs_a[:split_index]
 train_b = inputs_b[:split_index]
 train_labels = labels[:split_index]
@@ -75,7 +70,10 @@ test_a = inputs_a[split_index:]
 test_b = inputs_b[split_index:]
 test_labels = labels[split_index:]
 
-print(5)
+print(f"train_a, train_b, train_labels: {train_a.shape}, {train_b.shape}, {train_labels.shape}")
+print(f"test_a, test_b, test_labels: {test_a.shape}, {test_b.shape}, {test_labels.shape}")
+
+print(4)
 
 # ===============================
 
@@ -96,18 +94,16 @@ x = fen1(inputA)
 x = keras.Model(inputs=inputA, outputs=x)
 y = fen2(inputB)
 y = keras.Model(inputs=inputB, outputs=y)
-#combined = layers.concatenate([x.output, y.output])
 combined = layers.Multiply()([x.output, y.output])
 
-z = layers.Dense(512, activation="relu")(combined)
-z = layers.BatchNormalization()(z)
-z = layers.Dense(512, activation="relu")(z)
-z = layers.BatchNormalization()(z)
-z = layers.Dense(8, activation="relu")(z)
-z = layers.Flatten()(z)
-z = layers.Dense(8, activation="softmax")(z)
+flatten = layers.Flatten()(combined)
+fc1 = layers.Dense(512, activation="relu")(flatten)
+bn1 = layers.BatchNormalization()(fc1)
+fc2 = layers.Dense(512, activation="relu")(bn1)
+bn2 = layers.BatchNormalization()(fc2)
+output = layers.Dense(8, activation="softmax")(bn2)
 
-model = keras.Model(inputs=[x.input, y.input], outputs=z)
+model = keras.Model(inputs=[x.input, y.input], outputs=output)
 print(model.summary())
 model.compile(
     optimizer="adam",
